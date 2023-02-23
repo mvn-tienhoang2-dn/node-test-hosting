@@ -1,0 +1,34 @@
+{
+  "name": "node-self-learning",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "Tien Hoang V.",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^8.34.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.32.2",
+    "nodemon": "^2.0.20",
+    "prettier": "^2.8.4"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "eslint-config-standard": "^17.0.0",
+    "express": "^4.18.2",
+    "mongoose": "^5.13.16",
+    "morgan": "^1.10.0",
+    "slugify": "^1.6.5"
+  },
+  "engines": {
+    "node" : ">=14.0.0"
+  }
+}
