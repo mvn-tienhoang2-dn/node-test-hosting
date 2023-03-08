@@ -12,12 +12,19 @@ const handleDuplicateFieldsDB = (err) => {
   const message = `Duplicate field value: ${value}. Please use another value!`;
   return new AppError(message, 400);
 };
+
 const handleValidationErrorDB = (err) => {
   const errors = Object.values(err.errors).map((el) => el.message);
 
   const message = `Invalid input data. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
+
+const handleInvalidToken = () =>
+  new AppError('Invalid token please log in', 401);
+
+const handleExpriedToken = () =>
+  new AppError('Expried token please log in again', 401);
 
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -64,6 +71,8 @@ module.exports = (err, req, res, next) => {
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
+    if (error.code === 'JsonWebTokenError') error = handleInvalidToken();
+    if (error.code === 'TokenExpriedError') error = handleExpriedToken();
 
     sendErrorProd(error, res);
   } else {
