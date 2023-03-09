@@ -58,6 +58,7 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
+  // console.log(req.headers);
   let token;
   if (
     req.headers.authorization &&
@@ -65,19 +66,19 @@ exports.protect = catchAsync(async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(' ')[1];
   }
-
   if (!token) return next(new AppError('You are not logged in!', 401));
 
   const { id } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
   const loggedUser = await User.findById(id);
+  console.log(loggedUser);
 
   if (!loggedUser)
     return next(new AppError('This token is invalid please login again', 401));
 
-  if (loggedUser.changedPasswordAfter)
-    return next(
-      new AppError('User recently change password, please login again', 401)
-    );
+  // if (loggedUser.changedPasswordAfter)
+  //   return next(
+  //     new AppError('User recently change password, please login again', 401)
+  //   );
 
   req.user = loggedUser;
   next();

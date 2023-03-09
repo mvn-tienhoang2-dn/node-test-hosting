@@ -6,7 +6,9 @@ const handleCastErrorDB = (err) => {
 };
 
 const handleDuplicateFieldsDB = (err) => {
-  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+  // console.log(Object.keys(err.keyPattern));
+  // const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+  const value = Object.keys(err.keyPattern).join('');
   console.log(value);
 
   const message = `Duplicate field value: ${value}. Please use another value!`;
@@ -71,8 +73,8 @@ module.exports = (err, req, res, next) => {
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
-    if (error.code === 'JsonWebTokenError') error = handleInvalidToken();
-    if (error.code === 'TokenExpriedError') error = handleExpriedToken();
+    if (error.name === 'JsonWebTokenError') error = handleInvalidToken();
+    if (error.name === 'TokenExpriedError') error = handleExpriedToken();
 
     sendErrorProd(error, res);
   } else {
