@@ -36,6 +36,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     email: req.body.email,
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
+    role: req.body.role,
   });
   return sendingToken(201, user._id, 'success', res);
 });
@@ -48,7 +49,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
   const user = await User.findOne({ email }).select('+password');
   if (!user) {
-    return next(new (AppError('Email was wrong', 400))());
+    return next(new AppError('Email was wrong', 400));
   }
   const correct = await user.correctPassword(password, user.password);
   if (!correct) {
@@ -70,7 +71,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   const { id } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
   const loggedUser = await User.findById(id);
-  console.log(loggedUser);
+  // console.log(loggedUser);
 
   if (!loggedUser)
     return next(new AppError('This token is invalid please login again', 401));
@@ -87,7 +88,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 exports.restrictTo =
   (...roles) =>
   (req, res, next) => {
-    if (!roles.includes(req.user.role))
+    if (!roles.flat().includes(req.user.role))
       return next(new AppError(`You don't have permission`, 403));
     next();
   };

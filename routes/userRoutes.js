@@ -13,10 +13,15 @@ router.patch(
   authController.protect,
   authController.changePassword
 );
+// Signin MiddleWare
+router.use(authController.protect);
 
-router.patch('/update-me', authController.protect, userController.updateSelf);
+router.get('/self', userController.getSelf, userController.getUser);
+router.patch('/update-me', userController.updateSelf);
+router.delete('/disacive', userController.deleteSelf);
 
-router.delete('/disacive', authController.protect, userController.deleteSelf);
+// Only admin can use this route
+router.use(authController.restrictTo('admin'));
 
 router
   .route('/')
