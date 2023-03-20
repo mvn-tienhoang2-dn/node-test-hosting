@@ -10,11 +10,14 @@ process.on('uncaughtException', (err) => {
 dotenv.config({ path: './config.env' });
 const app = require('./app');
 
-const DB = process.env.DATABASE.replace(
-  '<PASSWORD>',
-  process.env.DATABASE_PASSWORD
-);
-
+const { env } = process;
+const DB = env.DATABASE.replace('<PASSWORD>', env.DATABASE_PASSWORD);
+// if (env.NODE_ENV !== 'production') {
+//   env.HOST.replace(
+//     'https://nodetesting.onrender.com/',
+//     'https://3a22-123-30-233-130.ap.ngrok.io'
+//   );
+// }
 mongoose
   .connect(DB, {
     useNewUrlParser: true,

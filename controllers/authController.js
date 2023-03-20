@@ -24,9 +24,7 @@ const sendingToken = (code, userId, message, res) => {
 
   res.status(code).json({
     status: message,
-    data: {
-      token,
-    },
+    token,
   });
 };
 
@@ -59,14 +57,16 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
-  // console.log(req.headers);
   let token;
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (res.cookies.jwt) {
+    token = res.cookies.jwt;
   }
+
   if (!token) return next(new AppError('You are not logged in!', 401));
 
   const { id } = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
@@ -170,9 +170,10 @@ exports.changePassword = catchAsync(async (req, res, next) => {
 
   return sendingToken(201, user._id, 'success', res);
 });
+
 // Only for rendered pages, no errors!
 exports.isLoggedIn = async (req, res, next) => {
-  console.log(req.cookies.jwt);
+  console.log(req.cookies);
   if (req.cookies.jwt) {
     try {
       // 1) verify token
@@ -200,4 +201,15 @@ exports.isLoggedIn = async (req, res, next) => {
     }
   }
   next();
+};
+
+exports.logout = (req, res) => {
+  // res.setHeader('');
+  const cookieOptions = {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+    sameSite: 'None',
+  };
+  res.cookie('jwt', 'loggout', cookieOptions);
+  return res.status(200).json({ status: 'success' });
 };

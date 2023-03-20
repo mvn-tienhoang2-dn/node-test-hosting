@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/sign-up', authController.signup);
 router.post('/login', authController.login);
+router.get('/logout', authController.logout);
 router.post('/forgot-password', authController.forgotPassword);
 router.patch('/reset-password/:token', authController.resetPassword);
 router.patch(
@@ -17,7 +18,11 @@ router.patch(
 router.use(authController.protect);
 
 router.get('/self', userController.getSelf, userController.getUser);
-router.patch('/update-me', userController.updateSelf);
+router.patch(
+  '/update-me',
+  userController.uploadPhoto,
+  userController.updateSelf
+);
 router.delete('/disacive', userController.deleteSelf);
 
 // Only admin can use this route
