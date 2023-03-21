@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/sign-up', authController.signup);
 router.post('/login', authController.login);
-router.get('/logout', authController.logout);
+router.get('/logout', authController.protect, authController.logout);
 router.post('/forgot-password', authController.forgotPassword);
 router.patch('/reset-password/:token', authController.resetPassword);
 router.patch(
@@ -14,6 +14,7 @@ router.patch(
   authController.protect,
   authController.changePassword
 );
+router.patch('/update-my-password', authController.updatePassword);
 // Signin MiddleWare
 router.use(authController.protect);
 
@@ -21,6 +22,7 @@ router.get('/self', userController.getSelf, userController.getUser);
 router.patch(
   '/update-me',
   userController.uploadPhoto,
+  userController.resizeUserPhoto,
   userController.updateSelf
 );
 router.delete('/disacive', userController.deleteSelf);

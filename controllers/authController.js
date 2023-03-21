@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const sendEmail = require('../utils/email');
+const Email = require('../utils/email');
 
 const genToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -29,13 +29,10 @@ const sendingToken = (code, userId, message, res) => {
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
-  const user = await User.create({
-    name: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    role: req.body.role,
-  });
+  console.log(req.body);
+  const user = await User.create(req.body);
+  const url = `${req.protocol}://${req.get('host')}/me`;
+  await new Email(user, url).sendWelcome();
   return sendingToken(201, user._id, 'success', res);
 });
 
@@ -63,8 +60,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
-  } else if (res.cookies.jwt) {
-    token = res.cookies.jwt;
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
 
   if (!token) return next(new AppError('You are not logged in!', 401));
@@ -82,6 +79,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   //   );
 
   req.user = loggedUser;
+  res.locals.user = loggedUser;
   next();
 });
 
@@ -108,21 +106,22 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     'host'
   )}/api/v1/reset-password/${resetToken}`;
 
-  const message = `Forgot your password? Click url below \n ${resetUrl}`;
-  try {
-    await sendEmail({
-      email: user.email,
-      subject: `Password Reset in 10m`,
-      message: message,
-    });
-  } catch (error) {
-    console.log(error);
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save({ validateBeforeSave: false });
+  new Email(user, resetUrl).sendPasswordReset();
+  // const message = `Forgot your password? Click url below \n ${resetUrl}`;
+  // try {
+  //   await sendEmail({
+  //     email: user.email,
+  //     subject: `Password Reset in 10m`,
+  //     message: message,
+  //   });
+  // } catch (error) {
+  //   console.log(error);
+  //   user.passwordResetToken = undefined;
+  //   user.passwordResetExpires = undefined;
+  //   await user.save({ validateBeforeSave: false });
 
-    return next(new AppError('Send email has been fail', 500));
-  }
+  //   return next(new AppError('Send email has been fail', 500));
+  // }
 
   res.status(200).json({
     status: `Success`,
@@ -173,7 +172,7 @@ exports.changePassword = catchAsync(async (req, res, next) => {
 
 // Only for rendered pages, no errors!
 exports.isLoggedIn = async (req, res, next) => {
-  console.log(req.cookies);
+  // console.log(req.cookies);
   if (req.cookies.jwt) {
     try {
       // 1) verify token
@@ -203,13 +202,30 @@ exports.isLoggedIn = async (req, res, next) => {
   next();
 };
 
-exports.logout = (req, res) => {
-  // res.setHeader('');
+exports.logout = async (req, res) => {
   const cookieOptions = {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
-    sameSite: 'None',
   };
-  res.cookie('jwt', 'loggout', cookieOptions);
+  await res.cookie('jwt', 'loggout', cookieOptions);
   return res.status(200).json({ status: 'success' });
 };
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) Get user from collection
+  const user = await User.findById(req.user.id).select('+password');
+
+  // 2) Check if POSTed current password is correct
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+    return next(new AppError('Your current password is wrong.', 401));
+  }
+
+  // 3) If so, update password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  await user.save();
+  // User.findByIdAndUpdate will NOT work as intended!
+
+  // 4) Log user in, send JWT
+  sendingToken(200, req.user._id, 'update oke', res);
+});
